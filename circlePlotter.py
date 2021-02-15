@@ -9,7 +9,7 @@ class stepperMotor:
     def __init__(self, gearRatio, gearDiameter, name):
         self.stepCount = 0
         self.velocity = 0
-        self.stepsPerRev = 1000
+        self.stepsPerRev = 2000
         self.gearRatio = gearRatio
         self.mmPerStepX = 0.1
         self.mmPerStepY = 0.1
@@ -39,8 +39,8 @@ class circlePlotter:
         self.currentPos = []
         self.currentTheta = 0.0
         self.currentR = 0.0
-        self.rMotor = stepperMotor(gearRatio=1, gearDiameter=1, name="r")
-        self.thetaMotor = stepperMotor(gearRatio=10, gearDiameter=10, name="theta")
+        self.rMotor = stepperMotor(gearRatio=1, gearDiameter=25.4, name="r")
+        self.thetaMotor = stepperMotor(gearRatio=11.25, gearDiameter=10, name="theta")
 
     def turnOnMotors(self):
         pi.setupMotorPins()
@@ -82,10 +82,10 @@ class circlePlotter:
         print("finish this?")
 
     def start(self):
-        self.readGcode('sandify.gcode')
+        self.readGcode('sandify2.gcode')
         self.setOrigin()
         self.turnOnMotors()
-        for x in range(0, 800):
+        for x in range(0, 20):
             self.moveToPoint(self.traj.pop(0))
         self.showPathTaken()
 
