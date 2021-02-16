@@ -52,6 +52,7 @@ class circlePlotter:
             self.updateRadius()
         elif motor == 2:
             self.thetaMotor.takeStep(direction)
+            self.updateRadius()
             self.updateTheta()
         else:
             print("Incorrect motor selection. Please select motor 1 or 2")
@@ -82,10 +83,10 @@ class circlePlotter:
         print("finish this?")
 
     def start(self):
-        self.readGcode('sandify2.gcode')
+        self.readGcode('sandify.gcode')
         self.setOrigin()
         self.turnOnMotors()
-        for x in range(0, 20):
+        for x in range(0, 800):
             self.moveToPoint(self.traj.pop(0))
         self.showPathTaken()
 
@@ -108,6 +109,7 @@ class circlePlotter:
             self.rMotorStepMovementUpdate()
             self.thetaMotorStepMovementUpdate()
 
+            #p = currentPos + distance of 1 step from x or y motor
             p1x = self.currentPos[0] + self.rMotor.mmPerStepX
             p1y = self.currentPos[1] + self.rMotor.mmPerStepY
             p2x = self.currentPos[0] - self.rMotor.mmPerStepX
@@ -117,7 +119,7 @@ class circlePlotter:
             p4x = self.currentPos[0] - self.thetaMotor.mmPerStepX
             p4y = self.currentPos[1] - self.thetaMotor.mmPerStepY
 
-
+            # d = x y remaining distance to goal with any given step
             dx1 = point[0] - (self.currentPos[0] + self.rMotor.mmPerStepX)
             dy1 = point[1] - (self.currentPos[1] + self.rMotor.mmPerStepY)
             # Check distance change if we move rMotor 1 step backward
@@ -130,17 +132,20 @@ class circlePlotter:
             dx4 = point[0] - (self.currentPos[0] - self.thetaMotor.mmPerStepX)
             dy4 = point[1] - (self.currentPos[1] - self.thetaMotor.mmPerStepY)
 
+            # line distance of remaining distance to goal with any given step
             d = math.sqrt(dx ** 2 + dy ** 2)
             d1t = math.sqrt(dx1 ** 2 + dy1 ** 2)
             d2t = math.sqrt(dx2 ** 2 + dy2 ** 2)
             d3t = math.sqrt(dx3 ** 2 + dy3 ** 2)
             d4t = math.sqrt(dx4 ** 2 + dy4 ** 2)
 
+            # distance from straight path to goal given a step
             d1 = self.pointLineDist(point[0],point[1],startPoint[0],startPoint[1],p1x,p1y)
             d2 = self.pointLineDist(point[0], point[1],startPoint[0],startPoint[1], p2x, p2y)
             d3 = self.pointLineDist(point[0], point[1],startPoint[0],startPoint[1], p3x, p3y)
             d4 = self.pointLineDist(point[0], point[1],startPoint[0],startPoint[1], p4x, p4y)
 
+            # if the resultant is farther, set to 0
             if d < d1t:
                 d1 = 0
             if d < d2t:
@@ -187,17 +192,16 @@ class circlePlotter:
 
     def rMotorStepMovementUpdate(self):
         extensionPerStep = (1.0 / self.rMotor.stepsPerRev) * self.rMotor.gearDiameter * math.pi
-
-
         self.rMotor.mmPerStepX = extensionPerStep * math.cos(self.currentTheta)
         self.rMotor.mmPerStepY = extensionPerStep * math.sin(self.currentTheta)
 
     def thetaMotorStepMovementUpdate(self):
         degreeChangePerStep = ((1 / self.thetaMotor.stepsPerRev) / self.thetaMotor.gearRatio) * 2 * math.pi
+        extensionPerStep = (degreeChangePerStep / (2*math.pi)) * self.rMotor.gearDiameter * math.pi
         self.thetaMotor.mmPerStepX = self.currentR * math.cos(
-            self.currentTheta + degreeChangePerStep) - self.currentR * math.cos(self.currentTheta)
+            self.currentTheta + degreeChangePerStep) - self.currentR * math.cos(self.currentTheta) + extensionPerStep * math.cos(self.currentTheta)
         self.thetaMotor.mmPerStepY = self.currentR * math.sin(
-            self.currentTheta + degreeChangePerStep) - self.currentR * math.sin(self.currentTheta)
+            self.currentTheta + degreeChangePerStep) - self.currentR * math.sin(self.currentTheta) + extensionPerStep * math.sin(self.currentTheta)
 
     def updateTheta(self):
         thetaStepsPerRev = self.thetaMotor.stepsPerRev * self.thetaMotor.gearRatio
@@ -206,6 +210,11 @@ class circlePlotter:
 
     def updateRadius(self):
         self.currentR = (self.rMotor.stepCount / self.rMotor.stepsPerRev) * self.rMotor.gearDiameter * math.pi
+
+        # Adding radius change from theta movement ( 1 full rotation of the large spur gear = 1 full rotation of
+        # inner gear)
+        self.currentR = self.currentR + (self.thetaMotor.stepCount/self.thetaMotor.stepsPerRev) * (1/self.thetaMotor.gearRatio) * self.rMotor.gearDiameter * math.pi
+
         self.updateCurrentPos()
 
     def updateCurrentPos(self):
