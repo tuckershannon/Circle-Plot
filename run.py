@@ -1,6 +1,8 @@
 
 import circlePlotter
 
+
+piFuncs.se
 sandTable = circlePlotter.circlePlotter()
 
 sandTable.start()

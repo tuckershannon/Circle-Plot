@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import math
 from pygcode import Line, Machine
@@ -21,8 +23,10 @@ class stepperMotor:
         # time.sleep(1/self.speed)
         if direction == 1:
             # print("Motor " + self.name + " step forward")
+            pi.takeThetaStep(0, self.name)
             self.stepCount += 1
         elif direction == 2:
+            pi.takeStep(1, self.name)
             # print("Motor " + self.name + " step backward")
             self.stepCount -= 1
         else:
@@ -76,8 +80,8 @@ class circlePlotter:
     def showPathTaken(self):
         xPoints = [x[0] for x in self.pathTaken]
         yPoints = [x[1] for x in self.pathTaken]
-        plt.plot(xPoints, yPoints)
-        plt.show()
+        # plt.plot(xPoints, yPoints)
+        # plt.show()
 
     def keyboardcontrol(self):
         print("finish this?")
@@ -86,7 +90,7 @@ class circlePlotter:
         self.readGcode('sandify.gcode')
         self.setOrigin()
         self.turnOnMotors()
-        for x in range(0, 800):
+        for x in range(0, 200):
             self.moveToPoint(self.traj.pop(0))
         self.showPathTaken()
 
